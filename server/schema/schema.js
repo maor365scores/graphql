@@ -1,7 +1,15 @@
 // Mongoose models
 const Project = require('../models/project.js');
 const Client = require('../models/client.js');
-const { GraphQLObjectType, GraphQLID, GraphQLString, GraphQLSchema, GraphQLList, GraphQLNonNull } = require('graphql');
+const {
+  GraphQLObjectType,
+  GraphQLID,
+  GraphQLString,
+  GraphQLSchema,
+  GraphQLList,
+  GraphQLNonNull,
+  GraphQLEnumType,
+} = require('graphql');
 
 //client type
 const ClientType = new GraphQLObjectType({
@@ -85,6 +93,44 @@ const Mutation = new GraphQLObjectType({
         });
 
         return client.save();
+      },
+    },
+    //Delete a client
+    deleteClient: {
+      type: ClientType,
+      args: { id: { type: GraphQLID } },
+      resolve(parent, args) {
+        return Client.findByIdAndRemove(args.id);
+      },
+    },
+    // Add a Project
+    addProject: {
+      type: ProjectType,
+      args: {
+        name: { type: GraphQLNonNull(GraphQLString) },
+        description: { type: GraphQLNonNull(GraphQLString) },
+        status: {
+          type: new GraphQLEnumType({
+            name: 'Project status',
+            values: {
+              new: { value: 'Not Started' },
+              progress: { value: 'In Progress' },
+              completed: { value: 'Completed' },
+            },
+          }),
+          defaultValue: 'Not Started',
+        },
+        clientId: { type: GraphQLNonNull(GraphQLID) },
+      },
+      resolve(parent, args) {
+        const project = new Project({
+          name: args.name,
+          description: args.description,
+          status: args.status,
+          clientId: args.clientId,
+        });
+
+        return project.save();
       },
     },
   },
